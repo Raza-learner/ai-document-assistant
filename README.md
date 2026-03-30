@@ -33,7 +33,9 @@ Google Gemini API · Streamlit
 
 ## Setup
 git clone https://github.com/Raza-learner/ai-document-assistant.git
+
 cd pdf-qa-bot
+
 pip install -r requirements.txt or uv sync
 # Add GEMINI_API_KEY to .env
 streamlit run app.py
