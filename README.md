@@ -11,7 +11,7 @@
 ![](screenshots/4.png)
 
 ## Live Demo
-[Try it here](YOUR_STREAMLIT_URL)
+[Try it here](https://ai-document-assistant-6knykve2lc5dxwpuqwfspb.streamlit.app/)
 
 ## Features
 - Multi-PDF upload and indexing
