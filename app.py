@@ -22,9 +22,12 @@ Ask questions from your PDFs instantly
 # ---------------- SESSION STATE ----------------
 if "qa_chain" not in st.session_state:
     st.session_state.qa_chain = None
-
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "chunk_count" not in st.session_state:
+    st.session_state.chunk_count = 0
+if "pdf_count" not in st.session_state:
+    st.session_state.pdf_count = 0
 
 # ---------------- SIDEBAR ----------------
 with st.sidebar:
@@ -45,7 +48,6 @@ with st.sidebar:
                 chunks = load_and_split_pdf(file)
                 all_chunks.extend(chunks)
 
-            # 🚨 Handle empty PDFs
             if not all_chunks:
                 st.error("No readable text found in PDF(s).")
                 st.info("Try a text-based (non-scanned) PDF.")
@@ -53,18 +55,40 @@ with st.sidebar:
 
             vs = create_vector_store(all_chunks)
             st.session_state.qa_chain = build_qa_chain(vs)
-
-            # Store stats
             st.session_state.chunk_count = len(all_chunks)
             st.session_state.pdf_count = len(uploaded_files)
 
         st.success("Documents ready!")
 
     # Show stats
-    if st.session_state.get("chunk_count"):
+    if st.session_state.chunk_count:
         col1, col2 = st.columns(2)
         col1.metric("Chunks", st.session_state.chunk_count)
         col2.metric("PDFs", st.session_state.pdf_count)
+
+    st.divider()
+
+    # Download chat history
+    if st.session_state.messages:
+        chat_text = ""
+        for msg in st.session_state.messages:
+            role = "You" if msg["role"] == "user" else "Bot"
+            chat_text += f"{role}:\n{msg['content']}\n\n"
+
+        st.download_button(
+            label="⬇️Download chat",
+            data=chat_text,
+            file_name="chat_history.txt",
+            mime="text/plain"
+        )
+
+    # Clear everything
+    if st.button("🗑️ Clear chat + reload"):
+        st.session_state.qa_chain = None
+        st.session_state.messages = []
+        st.session_state.chunk_count = 0
+        st.session_state.pdf_count = 0
+        st.rerun()
 
 # ---------------- CHAT HISTORY ----------------
 for msg in st.session_state.messages:
@@ -99,11 +123,9 @@ if st.session_state.qa_chain:
                     for i, doc in enumerate(result["sources"], 1):
                         page = doc.metadata.get("page", 0) + 1
                         source = doc.metadata.get("source", "document")
-
-                        st.markdown(f"""
-**{source} — Page {page}**
-> {doc.page_content[:200]}...
-""")
+                        st.markdown(f"**Source {i} — Page {page}**")
+                        st.caption(doc.page_content[:200] + "...")
+                        st.divider()
 
         st.session_state.messages.append({
             "role": "assistant",
@@ -113,7 +135,7 @@ if st.session_state.qa_chain:
 else:
     st.markdown("""
     <div style='text-align:center; margin-top:50px; color:gray;'>
-    📂 Upload a PDF to start chatting with your documents
+    📂 Upload a PDF in the sidebar to start chatting
     </div>
     """, unsafe_allow_html=True)
 
