@@ -10,5 +10,4 @@ faiss_index/
 
 # Virtual environments
 .venv
-uv.lock
 .env
